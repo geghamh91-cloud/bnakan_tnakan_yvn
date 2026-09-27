@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bnakan Tnakan | Домашняя кухня Ереван</title>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-cream: #FDFBF7;
+      --card-cream: #F5EFEB;
+      --brand-brown: #3C2A21;
+      --brand-green: #3F5E4D;
+      --brand-terracotta: #B85042;
+    }
+    body {
+      background-color: var(--bg-cream);
+      color: var(--brand-brown);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="pb-28">
+
+  <!-- Шапка -->
+  <header class="sticky top-0 z-40 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#E8DFD8] px-4 py-3 shadow-sm">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-full bg-[#EFE6DD] border border-[#D5C7BC] flex items-center justify-center font-bold text-[#3F5E4D] shadow-inner text-sm text-center leading-tight">
+          Bnakan<br><span class="text-[10px] text-[#B85042]">Tnakan</span>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-[#3C2A21] leading-none">Bnakan Tnakan</h1>
+          <p class="text-xs text-[#7A6B63] mt-0.5"><i class="fa-solid fa-location-dot text-[#3F5E4D]"></i> Ереван • @BnakanTnakan</p>
+        </div>
+      </div>
+      <button onclick="toggleCart()" class="relative p-2.5 rounded-full bg-[#EFE6DD] text-[#3C2A21] hover:bg-[#E5DAD0] transition">
+        <i class="fa-solid fa-basket-shopping text-lg"></i>
+        <span id="cart-badge" class="hidden absolute -top-1 -right-1 bg-[#B85042] text-white text-[11px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center border-2 border-[#FDFBF7]">0</span>
+      </button>
+    </div>
+
+    <!-- Баннер с условием бесплатной доставки -->
+    <div class="max-w-md mx-auto mt-2 bg-[#EFE6DD] border border-[#D5C7BC] rounded-xl px-3 py-1.5 flex items-center justify-between text-xs">
+      <div class="flex items-center space-x-2 text-[#3C2A21]">
+        <i class="fa-solid fa-truck-fast text-[#3F5E4D]"></i>
+        <span>Бесплатная доставка по Еревану</span>
+      </div>
+      <span class="font-bold text-[#3F5E4D]">от 15 000 ֏</span>
+    </div>
+
+    <!-- Поиск -->
+    <div class="max-w-md mx-auto mt-2">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+        <input type="text" id="searchInput" oninput="filterMenu()" placeholder="Поиск блюд..." class="w-full bg-[#F5EFEB] rounded-xl pl-9 pr-4 py-2 text-sm text-[#3C2A21] placeholder-gray-400 border border-[#E3D7CD] focus:outline-none focus:border-[#3F5E4D]">
+      </div>
+    </div>
+
+    <!-- Категории (скролл) -->
+    <div class="max-w-md mx-auto flex space-x-2 mt-2 overflow-x-auto hide-scrollbar py-1" id="categoryTabs"></div>
+  </header>
+
+  <!-- Список блюд -->
+  <main class="max-w-md mx-auto px-4 mt-3">
+    <div id="menuContainer" class="space-y-6"></div>
+  </main>
+
+  <!-- Модальное окно корзины / оформления -->
+  <div id="cartModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex flex-col justify-end">
+    <div class="bg-[#FDFBF7] rounded-t-3xl max-h-[90vh] flex flex-col max-w-md mx-auto w-full shadow-2xl border-t border-[#D5C7BC]">
+      <div class="p-4 border-b border-[#E8DFD8] flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-basket-shopping text-[#3F5E4D]"></i>
+          <h2 class="text-base font-bold">Ваш заказ</h2>
+        </div>
+        <button onclick="toggleCart()" class="text-gray-400 hover:text-gray-600 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto p-4 space-y-4 flex-1" id="cartContent">
+        <!-- Прогресс-бар бесплатной доставки -->
+        <div id="deliveryProgressBox" class="bg-[#F5EFEB] border border-[#E3D7CD] rounded-2xl p-3">
+          <div class="flex justify-between items-center text-xs mb-1.5">
+            <span id="deliveryProgressText" class="font-medium text-[#3C2A21]">До бесплатной доставки: 15 000 ֏</span>
+            <i class="fa-solid fa-truck text-[#3F5E4D]"></i>
+          </div>
+          <div class="w-full bg-[#E5DAD0] h-2 rounded-full overflow-hidden">
+            <div id="deliveryProgressBar" class="bg-[#3F5E4D] h-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div id="cartItemsList" class="space-y-2.5"></div>
+
+        <!-- Детали доставки -->
+        <div class="bg-[#F5EFEB] p-3.5 rounded-2xl border border-[#E3D7CD] space-y-3 mt-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#7A6B63]">Детали доставки (Ереван)</h3>
+          
+          <div>
+            <label class="text-xs font-medium text-gray-700">Имя</label>
+            <input type="text" id="custName" placeholder="Ваше имя" class="w-full mt-1 bg-white border border-[#D5C7BC] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#3F5E4D]">
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-gray-700">Телефон</label>
+            <input type="tel" id="custPhone" placeholder="+374 __ ___ ___" class="w-full mt-1 bg-white border border-[#D5C7BC] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#3F5E4D]">
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-gray-700">Адрес / Самовывоз</label>
+            <input type="text" id="custAddress" placeholder="Улица, дом, квартира (или самовывоз)" class="w-full mt-1 bg-white border border-[#D5C7BC] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#3F5E4D]">
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-gray-700">Комментарий к заказу</label>
+            <input type="text" id="custComment" placeholder="Пожелания, удобное время доставки и т.д." class="w-full mt-1 bg-white border border-[#D5C7BC] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#3F5E4D]">
+          </div>
+        </div>
+
+        <div class="bg-[#EFE6DD] p-3.5 rounded-2xl space-y-1">
+          <div class="flex justify-between items-center text-xs text-[#7A6B63]">
+            <span>Доставка по Еревану:</span>
+            <span id="deliveryCostLabel" class="font-bold text-[#3C2A21]">По тарифу такси/доставки</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-semibold pt-1 border-t border-[#D5C7BC]/50">
+            <span>Итого блюд на сумму:</span>
+            <span id="cartTotalPrice" class="text-lg text-[#B85042] font-black">0 ֏</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-[#E8DFD8]">
+        <button onclick="submitOrder()" class="w-full bg-[#3F5E4D] hover:bg-[#344E40] text-white py-3.5 rounded-2xl font-bold flex items-center justify-center space-x-2 shadow-lg transition active:scale-[0.98]">
+          <i class="fa-paper-plane fa-solid"></i>
+          <span>Оформить заказ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Плавающая плашка снизу -->
+  <div id="floatingCart" class="fixed bottom-4 inset-x-4 max-w-md mx-auto hidden z-30">
+    <button onclick="toggleCart()" class="w-full bg-[#3F5E4D] text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between font-bold active:scale-[0.99] transition">
+      <div class="flex items-center space-x-2">
+        <span id="floatCount" class="bg-[#B85042] px-2 py-0.5 rounded-full text-xs">0</span>
+        <span>Корзина</span>
+      </div>
+      <div id="floatTotal">0 ֏ <i class="fa-solid fa-arrow-right ml-1"></i></div>
+    </button>
+  </div>
+
+  <script>
+    const FREE_DELIVERY_THRESHOLD = 15000;
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const menuData = [
+      {
+        category: "Котлеты",
+        unit: "за 1 шт",
+        items: [
+          { id: 1, name: "Котлета (курица)", price: 350 },
+          { id: 2, name: "Котлета (индейка)", price: 400 },
+          { id: 3, name: "Котлета (говядина)", price: 450 },
+          { id: 4, name: "Котлета диетическая", price: 550 },
+          { id: 5, name: "Котлета (говядина + свинина)", price: 400 },
+          { id: 6, name: "Ишли кюфта", price: 550 },
+          { id: 7, name: "Котлета по-киевски", price: 550 }
+        ]
+      },
+      {
+        category: "Блинчики",
+        unit: "за 1 шт",
+        items: [
+          { id: 8, name: "Блинчики с говядиной", price: 400 },
+          { id: 9, name: "Блинчики (курица + грибы)", price: 350 },
+          { id: 10, name: "Блинчики с творогом", price: 300 },
+          { id: 11, name: "Блинчики (творог + изюм)", price: 300 },
+          { id: 12, name: "Блинчики с варёной сгущёнкой", price: 350 }
+        ]
+      },
+      {
+        category: "Фаршированные перцы",
+        unit: "за 1 шт",
+        items: [
+          { id: 13, name: "Перец (рис + овощи)", price: 700 },
+          { id: 14, name: "Перец (рис + курица)", price: 900 },
+          { id: 15, name: "Перец (рис + говядина)", price: 1000 }
+        ]
+      },
+      {
+        category: "Толма",
+        unit: "за 1 кг",
+        items: [
+          { id: 16, name: "Толма (виноград) замороженная", price: 5500 },
+          { id: 17, name: "Толма (виноград) готовая", price: 6500 },
+          { id: 18, name: "Толма (капуста) замороженная", price: 5000 },
+          { id: 19, name: "Толма (капуста) готовая", price: 6000 },
+          { id: 20, name: "Толма летняя", price: 6500 }
+        ]
+      },
+      {
+        category: "Курица и индейка / Полуфабрикаты",
+        unit: "",
+        items: [
+          { id: 21, name: "Наггетсы (курица)", price: 4000, unit: "за 1 кг" },
+          { id: 22, name: "Отбивные (индейка)", price: 6000, unit: "за 1 кг" },
+          { id: 23, name: "Куриный рулетик со шпинатом", price: 750, unit: "за 1 шт" },
+          { id: 24, name: "Куриный рулетик с грибами", price: 850, unit: "за 1 шт" }
+        ]
+      },
+      {
+        category: "Мясные заготовки",
+        unit: "",
+        items: [
+          { id: 25, name: "Фрикадельки куриные", price: 3500, unit: "за 1 кг" },
+          { id: 26, name: "Фрикадельки говяжьи", price: 5000, unit: "за 1 кг" },
+          { id: 27, name: "Пельмени говяжьи", price: 4500, unit: "за 1 кг" },
+          { id: 28, name: "Соус болоньезе (300 г)", price: 1700, unit: "за порцию" },
+          { id: 29, name: "Бефстроганов (400 г)", price: 2500, unit: "за порцию" }
+        ]
+      },
+      {
+        category: "Готовые блюда (мин. заказ 4 порции)",
+        unit: "за 1 порцию",
+        minOrder: 4,
+        items: [
+          { id: 30, name: "Мясо по-кремлёвски + гарнир", price: 2500 },
+          { id: 31, name: "Котлета + гарнир (рис/гречка)", price: 1600 },
+          { id: 32, name: "Плов с курицей", price: 900 },
+          { id: 33, name: "Макароны по-флотски", price: 800 }
+        ]
+      },
+      {
+        category: "Супы (мин. заказ 4 порции)",
+        unit: "за 1 порцию",
+        minOrder: 4,
+        items: [
+          { id: 34, name: "Ариса", price: 1000 },
+          { id: 35, name: "Грибной крем-суп", price: 1000 },
+          { id: 36, name: "Суп «соус» с говядиной", price: 1500 },
+          { id: 37, name: "Суп куриный", price: 850 },
+          { id: 38, name: "Спас", price: 600 },
+          { id: 39, name: "Борщ", price: 1500 },
+          { id: 40, name: "Суп с фрикадельками", price: 1300 }
+        ]
+      },
+      {
+        category: "Овощи (май–ноябрь)",
+        unit: "за 1 кг",
+        items: [
+          { id: 41, name: "Красный перец (маринад)", price: 1800 },
+          { id: 42, name: "Овощи гриль (хоровац)", price: 2000 },
+          { id: 43, name: "Դարսովի ճաշ (овощи слоями)", price: 3000 }
+        ]
+      },
+      {
+        category: "Детское меню (без перца)",
+        unit: "",
+        items: [
+          { id: 44, name: "Котлета детская (курица+брокколи)", price: 300, unit: "за 1 шт" },
+          { id: 45, name: "Фрикадельки детские (курица)", price: 4000, unit: "за 1 кг" },
+          { id: 46, name: "Фрикадельки детские (говядина)", price: 5500, unit: "за 1 кг" }
+        ]
+      },
+      {
+        category: "Выпечка",
+        unit: "за 0.5 кг",
+        items: [
+          { id: 47, name: "Сырники", price: 2000 },
+          { id: 48, name: "Хачапури", price: 1400 },
+          { id: 49, name: "Тесто слоёное", price: 800 }
+        ]
+      }
+    ];
+
+    let cart = {};
+    let activeCat = "Все";
+
+    function init() {
+      renderCategories();
+      renderMenu();
+      if (tg?.initDataUnsafe?.user) {
+        document.getElementById('custName').value = tg.initDataUnsafe.user.first_name || '';
+      }
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('categoryTabs');
+      const cats = ["Все", ...menuData.map(c => c.category)];
+      container.innerHTML = cats.map(cat => `
+        <button onclick="setCategory('${cat}')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${activeCat === cat ? 'bg-[#3F5E4D] text-white shadow-sm' : 'bg-[#EFE6DD] text-[#7A6B63] hover:bg-[#E5DAD0]'}">
+          ${cat}
+        </button>
+      `).join('');
+    }
+
+    function setCategory(cat) {
+      activeCat = cat;
+      renderCategories();
+      renderMenu();
+    }
+
+    function renderMenu() {
+      const container = document.getElementById('menuContainer');
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      
+      const filtered = menuData.map(group => {
+        if (activeCat !== "Все" && group.category !== activeCat) return null;
+        const matchingItems = group.items.filter(i => i.name.toLowerCase().includes(search));
+        if (matchingItems.length === 0) return null;
+        return { ...group, items: matchingItems };
+      }).filter(Boolean);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-gray-400">Ничего не найдено</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(group => `
+        <div>
+          <div class="flex items-baseline justify-between mb-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-[#3C2A21]">${group.category}</h2>
+            <span class="text-[11px] text-[#7A6B63]">${group.unit || ''}</span>
+          </div>
+          <div class="space-y-2">
+            ${group.items.map(item => {
+              const qty = cart[item.id] || 0;
+              const unitText = item.unit || group.unit || '';
+              return `
+                <div class="bg-[#F5EFEB] border border-[#E8DFD8] rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                  <div class="pr-2">
+                    <div class="text-sm font-bold text-[#3C2A21]">${item.name}</div>
+                    <div class="text-xs font-semibold text-[#B85042] mt-0.5">${item.price.toLocaleString()} ֏ <span class="text-[11px] text-gray-500 font-normal">${unitText}</span></div>${group.minOrder ? `<div class="text-[10px] text-amber-700 font-medium">мин. заказ ${group.minOrder} порции</div>` : ''}
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    ${qty > 0 ? `
+                      <button onclick="changeQty(${item.id}, -1)" class="w-8 h-8 rounded-xl bg-white border border-[#D5C7BC] text-[#3C2A21] flex items-center justify-center font-bold active:scale-95 transition">-</button>
+                      <span class="w-6 text-center font-bold text-sm text-[#3C2A21]">${qty}</span>
+                    ` : ''}
+                    <button onclick="changeQty(${item.id}, 1)" class="w-8 h-8 rounded-xl bg-[#3F5E4D] text-white flex items-center justify-center font-bold shadow active:scale-95 transition">+</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterMenu() {
+      renderMenu();
+    }
+
+    function getItemById(id) {
+      for (const group of menuData) {
+        const found = group.items.find(i => i.id === id);
+        if (found) return { ...found, category: group.category };
+      }
+      return null;
+    }
+
+    function changeQty(id, delta) {
+      const current = cart[id] || 0;
+      const next = current + delta;
+      if (next <= 0) {
+        delete cart[id];
+      } else {
+        cart[id] = next;
+      }
+      updateCartUI();
+      renderMenu();
+    }
+
+    function updateCartUI() {
+      let totalCount = 0;
+      let totalPrice = 0;
+
+      for (const [id, qty] of Object.entries(cart)) {
+        const item = getItemById(parseInt(id));
+        if (item) {
+          totalCount += qty;
+          totalPrice += item.price * qty;
+        }
+      }
+
+      // Бейдж
+      const badge = document.getElementById('cart-badge');
+      if (totalCount > 0) {
+        badge.textContent = totalCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      // Плавающая плашка снизу
+      const floatCart = document.getElementById('floatingCart');
+      if (totalCount > 0) {
+        floatCart.classList.remove('hidden');
+        document.getElementById('floatCount').textContent = totalCount;
+        document.getElementById('floatTotal').innerHTML = `${totalPrice.toLocaleString()} ֏ <i class="fa-solid fa-arrow-right ml-1"></i>`;
+      } else {
+        floatCart.classList.add('hidden');
+      }
+
+      // Прогресс бесплатной доставки
+      const progressBox = document.getElementById('deliveryProgressBox');
+      const progressText = document.getElementById('deliveryProgressText');
+      const progressBar = document.getElementById('deliveryProgressBar');
+      const deliveryLabel = document.getElementById('deliveryCostLabel');
+
+      if (totalPrice >= FREE_DELIVERY_THRESHOLD) {
+        progressText.innerHTML = `<span class="text-[#3F5E4D] font-bold">🎉 Доставка по Еревану бесплатная!</span>`;
+        progressBar.style.width = '100%';
+        progressBar.className = "bg-[#3F5E4D] h-full transition-all duration-300";
+        deliveryLabel.innerHTML = `<span class="text-[#3F5E4D] font-bold">Бесплатно</span>`;
+      } else {
+        const diff = FREE_DELIVERY_THRESHOLD - totalPrice;
+        const percent = Math.min(100, Math.round((totalPrice / FREE_DELIVERY_THRESHOLD) * 100));
+        progressText.innerHTML = `До бесплатной доставки: <b>${diff.toLocaleString()} ֏</b>`;
+        progressBar.style.width = `${percent}%`;
+        deliveryLabel.textContent = "По тарифу такси/курьера";
+      }
+
+      renderCartItems(totalPrice);
+    }
+
+    function renderCartItems(totalPrice) {
+      const list = document.getElementById('cartItemsList');
+      const itemsKeys = Object.keys(cart);
+
+      if (itemsKeys.length === 0) {
+        list.innerHTML = `<div class="text-center py-6 text-gray-400 text-sm">Корзина пуста</div>`;
+        document.getElementById('cartTotalPrice').textContent = "0 ֏";
+        return;
+      }
+
+      list.innerHTML = itemsKeys.map(idStr => {
+        const id = parseInt(idStr);
+        const item = getItemById(id);
+        const qty = cart[id];
+        return `
+          <div class="flex items-center justify-between py-2 border-b border-[#E8DFD8]">
+            <div class="pr-2">
+              <div class="text-xs font-bold text-[#3C2A21]">${item.name}</div>
+              <div class="text-[11px] text-[#B85042]">${item.price.toLocaleString()} ֏ × ${qty} = ${(item.price * qty).toLocaleString()} ֏</div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="changeQty(${id}, -1)" class="w-6 h-6 rounded-lg bg-white border border-[#D5C7BC] text-xs flex items-center justify-center font-bold">-</button>
+              <span class="text-xs font-bold w-4 text-center">${qty}</span>
+              <button onclick="changeQty(${id}, 1)" class="w-6 h-6 rounded-lg bg-[#3F5E4D] text-white text-xs flex items-center justify-center font-bold">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('cartTotalPrice').textContent = `${totalPrice.toLocaleString()} ֏`;
+    }
+
+    function toggleCart() {
+      const modal = document.getElementById('cartModal');
+      modal.classList.toggle('hidden');
+    }
+
+    function submitOrder() {
+      const keys = Object.keys(cart);
+      if (keys.length === 0) {
+        alert("Пожалуйста, добавьте блюда в заказ!");
+        return;
+      }
+
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const address = document.getElementById('custAddress').value.trim();
+      const comment = document.getElementById('custComment').value.trim();
+
+      if (!name || !phone) {
+        alert("Пожалуйста, заполните имя и контактный телефон!");
+        return;
+      }
+
+      let total = 0;
+      const orderItems = keys.map(idStr => {
+        const id = parseInt(idStr);
+        const item = getItemById(id);
+        const count = cart[id];
+        const sum = item.price * count;
+        total += sum;
+        return { name: item.name, count, price: item.price, sum };
+      });
+
+      const isFreeDelivery = total >= FREE_DELIVERY_THRESHOLD;
+
+      const payload = {
+        name,
+        phone,
+        address: address || "Самовывоз / Уточнить",
+        comment: comment || "-",
+        items: orderItems,
+        total: total,
+        isFreeDelivery: isFreeDelivery
+      };
+
+      // Если в Telegram WebApp
+      if (window.Telegram?.WebApp && window.Telegram.WebApp.sendData) {
+        try {
+          window.Telegram.WebApp.sendData(JSON.stringify(payload));
+          return;
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      // Отправка в чат Telegram @BnakanTnakan
+      let orderMsg = `🛒 *Новый заказ в Bnakan Tnakan*\n`;
+      orderMsg += `👤 *Имя:* ${payload.name}\n`;
+      orderMsg += `📞 *Телефон:* ${payload.phone}\n`;
+      orderMsg += `📍 *Адрес:* ${payload.address}\n`;
+      if (payload.comment !== "-") orderMsg += `💬 *Комментарий:* ${payload.comment}\n`;
+      orderMsg += `🚗 *Доставка:* ${isFreeDelivery ? 'Бесплатная (акция от 15 000 ֏) 🎉' : 'По тарифу курьера / самовывоз'}\n`;
+      orderMsg += `\n*Состав заказа:*\n`;
+      payload.items.forEach(i => {
+        orderMsg += `• ${i.name} — ${i.count} шт/кг (${i.sum.toLocaleString()} ֏)\n`;
+      });
+      orderMsg += `\n*Итого к оплате:* ${payload.total.toLocaleString()} ֏`;
+
+      const tgUrl = `https://t.me/BnakanTnakan?text=${encodeURIComponent(orderMsg)}`;
+      window.open(tgUrl, '_blank');
+    }
+
+    init();
+  </script>
+</body>
+</html>
